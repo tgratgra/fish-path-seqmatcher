@@ -1,0 +1,20 @@
+/***
+Stylesheet for the FishPathogen.eu sequence matching tool.
+***/
+
+body {
+	font: Georgia;
+}
+
+label { 
+	display: block;
+	font-weight: bold;
+}
+
+p.description {
+	font-style: italic;
+}
+
+p.helptext {
+	font-style: italic;
+}
