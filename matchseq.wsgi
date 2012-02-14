@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""
+A simple webservice for matching sequences to a pre-existing library of seqs.
 
 ### IMPORTS
 
@@ -8,60 +10,12 @@ from cgi import parse_qs, escape
 
 ### CONSTANTS & DEFINES
 
-TEST_ADDR = "158.119.147.40"
-TEST_PORT = 9123
-
-CSS_URL = '/matchseq.css'
-SITE_TITLE = "FishPathogens.Eu"
-PAGE_TITLE = "Sequence matcher"
-
-TEST_REGIONS = [
-	('1', 'Region 1'),
-	('2', 'Region 2'),
-	('3', 'Region 3'),
-]
-
-SCRIPT_NAME = __file__
-
 ALL_METHODS = [
 	('fasta', 'FASTA'),
 	('nj', 'neighbour-joining')
 ]
 
-PAGE_TMPL = """
-<html>
-	<head>
-		<title>%(SITE_TITLE)s</title>
-		<link rel="stylesheet" type="text/css" href="%(CSS_URL)s" />
-	<head>
-	<body>
-	
-		<h1>Sequence Matching</h1>
-	
-		<p class="description">
-			This webservice accepts an input sequence and attempts to match it against
-			selection of database sequences, using either FASTA matching or by
-			building a phylogeny using Neighbour-joining.
-		</p>
-	
-		%(MESSAGES)s
-	
-		%(RESULTS)s
-	
-		<hr />
-	
-	   <form method="get" action="%(SCRIPT_NAME)s">
-			%(FORM)s
-		</form>
-	
-		<hr />
-		THE FOOTER WILL APPEAR HERE
-		
-	</body>
-</html>
-""" 
-	
-
+PAGE_TMPL_FILE = 'matchseq.tmpl.html'
 
 
 ### IMPLEMENTATION ###
@@ -256,6 +210,15 @@ def application(environ, start_response):
 
 ### TEST & DEBUG
 
+TEST_ADDR = "158.119.147.40"
+TEST_PORT = 9123
+
+TEST_REGIONS = [
+	('1', 'Region 1'),
+	('2', 'Region 2'),
+	('3', 'Region 3'),
+]
+
 # make a server & run the application to test it
 if __name__ == '__main__':
 	httpd = make_server (TEST_ADDR, TEST_PORT, application)
@@ -264,5 +227,4 @@ if __name__ == '__main__':
 
 
 ### END ###
-
 
