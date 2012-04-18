@@ -92,13 +92,13 @@ def get_args (environ):
 
 
 def render_choose_regions (args):
-	print "stage 1"
+	print "page A"
 	all_regions = make_db_connection().select_regions()
 	return formbuilder.select_region_form (args, ALL_METHODS, all_regions)
 
 
-def render_enter_and_select_genes (form):
-	print "stage 2"
+def render_enter_and_select_genes (args):
+	print "page B"
 	available_genes = make_db_connection().select_genes (args['regions'])
 	return formbuilder.enter_and_select_genes_form (args, ALL_METHODS, available_genes)
 
@@ -117,22 +117,23 @@ def application(environ, start_response):
 	# 1. opening page, enter seq, select region
 	# 2. second page, select method & enter sequence
 	# 3. third & final page, show results
-	if (args.get ("submit", False) in [False, config.RESELECT_REGIONS]):
+	if (args.get ("submit", False) in [False, config.SUBMIT_RESELECT_REGIONS]):
 		# 1. if we are new to the form or have returned to the initial page
+		print "stage 1"
 		return render_choose_regions (args)
 	elif args.get ("submit", config.SUBMIT_SELECT_REGIONS):
 		# 2. have just selected regions, if valid allow entry & selection of genes
 		# otherwise return to region selection
+		print "stage 2"
 		try:
 			assert (0 < len (args.get("regions", []))), "need to select at least 1 region"
-			return render_choose_regions (args)
+			form_body = render_enter_and_select_genes (args)
 		except:
-			# go back to the page
-			# TODO: append error message
-			conn = make_db_connection().select_regions()
-			form_body = formbuilder.render_form_select_region (args, ALL_METHODS, all_regions)
-	elif args.get ("submit", False):
-		# 3. have selected genes, now want to do the match & show results
+			# TODO: handle err & append error message
+			form_body = render_choose_regions (args)
+	elif args.get ("submit", config.SUBMIT_MATCH_GENES):
+		# 3. have entered & selected genes, if valid do match, otherwise return
+		# gene entry page
 		# TODO: check args
 		print "stage 3"
 		if (True):
