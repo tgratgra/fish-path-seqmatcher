@@ -3,7 +3,7 @@ Stylesheet for the FishPathogen.eu sequence matching tool.
 ***/
 
 body {
-	font: Georgia;
+	font: Times;
 }
 
 label { 
@@ -17,4 +17,8 @@ p.description {
 
 p.helptext {
 	font-style: italic;
+}
+
+hr.form_divider {
+	border: 5px solid green;
 }
