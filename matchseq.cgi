@@ -25,11 +25,13 @@ __author__ = 'Paul-Michael Agapow (pma@agapow,net)'
 ### IMPORTS
 
 from cgi import parse_qs, escape
+from exceptions import AssertionError
 
 import config
 import templates
 import formbuilder
 import dbconn
+from treebuilder import build_tree
 
 
 ### CONSTANTS & DEFINES
@@ -45,7 +47,7 @@ ALL_METHODS = [
 
 def make_db_connection():
 	return dbconn.DbConn (
-		type = 'mysql',
+		protocol = config.DB_TYPE,
 		host = config.DB_HOST,
 		user = config.DB_USER, 
 		passwd = config.DB_PASSWD,
@@ -80,7 +82,7 @@ def get_args (environ):
 	args = {}
 	for k, v in parse_qs(request_body).iteritems():
 		print "arg:", k, v
-		if (k != 'regions'):
+		if (k not in ['regions', 'refseqs']):
 			if v in [[''], []]:
 				v = None
 			else:
@@ -94,13 +96,35 @@ def get_args (environ):
 def render_choose_regions (args):
 	print "page A"
 	all_regions = make_db_connection().select_regions()
-	return formbuilder.select_region_form (args, ALL_METHODS, all_regions)
+	rgn_tuples = [(r['id'], r['gene_region']) for r in all_regions]
+	return formbuilder.select_region_form (args, ALL_METHODS, rgn_tuples)
 
 
-def render_enter_and_select_genes (args):
+def render_select_genes (args):
 	print "page B"
-	available_genes = make_db_connection().select_genes (args['regions'])
-	return formbuilder.enter_and_select_genes_form (args, ALL_METHODS, available_genes)
+	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
+	region_names = [r['gene_region'] for r in sel_regions]
+	available_genes = make_db_connection().select_seqs_by_regions (region_names)
+	return formbuilder.select_genes_form (args, available_genes)
+
+
+def render_show_results (args):
+	print "page C"
+	messages = []
+	selected_genes = make_db_connection().select_seqs_by_ids (args['refseqs'])
+	messages.append (('note', '%s reference genes selected for matching' % len (selected_genes)))
+	target_seq = args['seq']
+	method = args['match_by']
+	
+	tree_str = ''
+	try:
+		tree_str = build_tree (method, selected_genes, target_gene_seq)
+	except StandardError, err:
+		messages.append (('error', 'matching failed (%s)' % str(err)))
+	except:
+		messages.append (('error', 'matching failed (unknown problem)'))
+		
+	return messages, formbuilder.show_results_form (args, available_genes, tree)
 
 
 def application(environ, start_response):
@@ -120,17 +144,20 @@ def application(environ, start_response):
 	if (args.get ("submit", False) in [False, config.SUBMIT_RESELECT_REGIONS]):
 		# 1. if we are new to the form or have returned to the initial page
 		print "stage 1"
-		return render_choose_regions (args)
+		form_body =  render_choose_regions (args)
 	elif args.get ("submit", config.SUBMIT_SELECT_REGIONS):
 		# 2. have just selected regions, if valid allow entry & selection of genes
 		# otherwise return to region selection
 		print "stage 2"
 		try:
 			assert (0 < len (args.get("regions", []))), "need to select at least 1 region"
-			form_body = render_enter_and_select_genes (args)
-		except:
+			messages.append (('note', 'gene regions and matching method selected'))
+			form_body = render_select_genes (args)
+		except AssertionError, err:
 			# TODO: handle err & append error message
+			messages.append (('error', str(err)))
 			form_body = render_choose_regions (args)
+			print "MESS", messages
 	elif args.get ("submit", config.SUBMIT_MATCH_GENES):
 		# 3. have entered & selected genes, if valid do match, otherwise return
 		# gene entry page
@@ -138,23 +165,26 @@ def application(environ, start_response):
 		print "stage 3"
 		if (True):
 			# TODO: render results
-			form_body = formbuilder.render_form_select_genes (args)
+			assert (0 < len (args.get("refseqs", []))), "need to select at least 3 reference sequences"
+			messages.append (('note', 'genes selected'))
+			msgs, form_body = formbuilder.render_show_results (args)
+			messages.extend (msgs)
 		else:
 			# go back to the page
 			# TODO: append error message
-			form_body = formbuilder.render_form_select_genes (args)
+			form_body = formbuilder.render_select_genes (args)
 	else:
-		print "SHOUDL NOT GET HERE", args
-	
+		print "SHOULD NOT GET HERE", args
+	print "DO I GET HERE"
 	# build page to return
-	response_body = templates.PAGE % {
+	response_body = (templates.PAGE % {
 		'MESSAGES': '\n'.join (['<p class="%s">%s</p>' % (r[0], r[1]) for r in messages]),
 		'RESULTS': '\n'.join (results),
 		'SCRIPT_NAME': __file__,
 		'FORM': form_body,
-	}
+	}).encode ('utf-8')
 	response_headers = [
-		('Content-Type', 'text/html'),
+		('Content-Type', 'text/html; charset=UTF-8'),
 		('Content-Length', str (len (response_body))),
 	]
 	start_response ('200 OK', response_headers)
@@ -162,7 +192,7 @@ def application(environ, start_response):
 	## Postconditions & return:
 	# NOTE: have to do this as wsgi doesn't handle unicode but bytes
 	# NOTE: must return an iterable
-	return [response_body.encode('utf-8')]
+	return [response_body]
 
 
 ### TEST & DEBUG
@@ -179,7 +209,6 @@ if __name__ == '__main__':
 		TEST_PORT = 9123
 		
 		from wsgiref.simple_server import make_server
-		import static
 		httpd = make_server (TEST_ADDR, TEST_PORT, application)
 		httpd.serve_forever()
 	else:

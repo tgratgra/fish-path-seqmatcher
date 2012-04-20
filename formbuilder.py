@@ -10,6 +10,8 @@ __docformat__ = 'restructuredtext en'
 
 ### IMPORTS ###
 
+import types
+
 import templates
 import htmltags
 import config
@@ -103,7 +105,7 @@ def checkbox_input (label, name, vals, helptext='', env={}):
 	return form_field (label, check_body, helptext)
 
 
-def render_hidden (name, val):
+def hidden_input (name, val):
 	"""
 	Produce the HTML for a hidden field
 	
@@ -119,11 +121,67 @@ def render_hidden (name, val):
 			
 	Used for passing form values between stages.
 	"""
-	if type (val) not in (types.ListType, typesdTupleType):
-		val = List(val)
-	return '\n'.join (["<input type='hidden' name='%s' value='SEQ' />" %
-		(name, v) for v in vals])
+	if type (val) not in (types.ListType, types.TupleType):
+		val = list(val)
+	return '\n'.join (["<input type='hidden' name='%s' value='%s' />" %
+		(name, v) for v in val])
 
+
+
+def seq_table_input (gene_choices, env={}):
+	if gene_choices:
+		
+		def format_vals (v):
+			if v is None:
+				return ''
+			else:
+				return "%s" % v
+			
+		print gene_choices
+		col_headers = ['accession_number', 'isolate_name', 'sequencing_method', 'author']
+		
+		theader = htmltags.tag_with_contents ('thead',
+			htmltags.tag_with_contents ('tr',
+				' '.join ([
+					htmltags.tag_with_contents ('td', 
+						h.replace('_', ' ').title()
+					) for h in [''] + col_headers
+				])
+			)
+		)
+		
+		checked_vals = dict (*[(v, 'checked') for v in env.get ('refseqs', [])])
+		tbody = htmltags.tag_with_contents ('tbody',
+			'\n'.join ([
+				htmltags.tag_with_contents ('tr',
+					' '.join (
+						[
+							"<td><input type='checkbox' name='refseqs' value='%s' %s /></td>" % \
+								(g['id'], checked_vals.get(g['id'], ''))
+						] + 
+						[htmltags.tag_with_contents ('td', format_vals (g[h])) for h in col_headers]
+					)
+				) for g in gene_choices
+			])
+		)
+		
+		tab = htmltags.tag_with_contents ('table',
+			theader + '\n' + tbody,
+			_class="refseq_table"
+		)
+		helptext = """
+			<p class='helptext'>Select at least 3 reference sequences
+			to be matched. Select 
+			<a href="javascript:SetAllCheckBoxes('dvifish', 'refseqs', true)">all</a> or
+			<a href=\"javascript:SetAllCheckBoxes('dvifish', 'refseqs', false)">none</a>.
+			</p>
+		"""
+		return tab + helptext
+
+	
+
+### FORMS / PAGES
+# The three pages to show
 
 def select_region_form (d, methods, region_choices):
 
@@ -139,7 +197,12 @@ def select_region_form (d, methods, region_choices):
 		radio_input ('Method', 'match_by', methods, env=d,
 			helptext="How to match sequences.", default=None),
 		checkbox_input ('Region', 'regions', region_choices, env=d,
-			helptext="The genomic region to be matched against."),
+			helptext="""
+				The genomic region to be matched against. Select 
+				<a href="javascript:SetAllCheckBoxes('dvifish', 'regions', true)">all</a> or
+				<a href=\"javascript:SetAllCheckBoxes('dvifish', 'regions', false)">none</a>.
+			"""
+		),
 	])
 
 	controls = """
@@ -157,20 +220,27 @@ def select_region_form (d, methods, region_choices):
 	}
 	
 	
-def enter_and_select_genes_form (d, gene_choices):
+def select_genes_form (d, gene_choices):
 	controls = """
 		<input type="hidden" name="_form_submitted" value="True">
 		<input type="reset" value="Reset">
 		<input type="submit" name="select_genes" value="Select genes">	
 	"""
-	hidden_inputs = '\n'.join ([render_hidden (n, d.get(n, '')) for n in
-		['seq', 'region', 'match_by']])
+	print "D", d
+	hidden_inputs = '\n'.join ([
+		hidden_input ('seq', [d.get ('seq', '')]),
+		hidden_input ('regions', d['regions']),
+		hidden_input ('match_by', [d['match_by']]),
+		])
 	
-	fields = '\n'.join ([
-		render_check_input ('Select genes', 'genes', gene_choices, env=d,
-			helptext="The genomic region to be matched against."),
-	])
+	#fields = '\n'.join ([
+	#	checkbox_input ('Select genes', 'genes', gene_choices, env=d,
+	#		helptext="The genomic region to be matched against."),
+	#])
 
+	fields = seq_table_input (gene_choices)
+	
+	
 	controls = """
 		<input type="hidden" name="_form_submitted" value="True">
 		<input type="reset" value="Reset">
@@ -182,10 +252,12 @@ def enter_and_select_genes_form (d, gene_choices):
 	return templates.FORM_BODY %  {
 		'TITLE': 'Step 2: Select genes &amp; compare',
 		'DESC': '',
-		'FIELDS': hidden_inputs + fields,
+		'FIELDS': hidden_inputs + '\n\n' + fields,
 		'CONTROLS': controls,
 	}
 
+def show_results_form (d, gene_choices):
+	return ['foo', 'bar'], select_genes_form (d, gene_choices)
 
 ### TEST & DEBUG ###
 

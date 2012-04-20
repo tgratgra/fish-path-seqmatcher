@@ -18,6 +18,24 @@ PAGE = """
 		<title>TESTING TESTING</title>
 		<!-- <link rel="stylesheet" type="text/css" href="./matchseq.css" /> -->
 		<link rel="shortcut icon" href="http://www.example.com/my_empty_resource" />
+		
+		<script language='javascript'>
+			function SetAllCheckBoxes(FormName, FieldName, CheckValue) {
+				if(!document.forms[FormName])
+					return;
+				var objCheckBoxes = document.forms[FormName].elements[FieldName];
+				if(!objCheckBoxes)
+					return;
+				var countCheckBoxes = objCheckBoxes.length;
+				if(!countCheckBoxes)
+					objCheckBoxes.checked = CheckValue;
+				else
+					// set the check value for all check boxes
+					for(var i = 0; i < countCheckBoxes; i++)
+						objCheckBoxes[i].checked = CheckValue;
+			}
+		</script>
+	
 	<head>
 	<body>
 	
@@ -36,7 +54,7 @@ PAGE = """
 	
 		<hr />
 	
-	   <form method="post" action="%(SCRIPT_NAME)s">
+	   <form method="post" action="%(SCRIPT_NAME)s" id="dvifish" name="dvifish">
 			%(FORM)s
 		</form>
 	
