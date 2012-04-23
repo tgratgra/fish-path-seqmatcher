@@ -67,42 +67,7 @@ def make_db_connection():
 	)
 
 
-### APPLICATION & PROCESSING
-
-def get_args (environ):
-	"""
-	Unpack arguments in appropriate way.
-	
-	Note that the awkward code below is actually legit if you are using POST
-	(which we are due to the size of what we're passing). If you use GET, it's
-	a lot simpler.
-	"""
-	# In this idiom you must issue a list containing a default value.
-	#age = d.get('age', [''])[0] # Returns the first age value.
-	#hobbies = d.get('hobbies', []) # Returns a list of hobbies.
-	
-	# Always escape user input to avoid script injection
-	#age = escape(age)
-	#hobbies = [escape(hobby) for hobby in hobbies]
-	
-	# grab args as a dict containing lists as values
-	try:
-		request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-	except (ValueError):
-		request_body_size = 0
-	request_body = environ['wsgi.input'].read(request_body_size)
-	args = {}
-	for k, v in parse_qs(request_body).iteritems():
-		print "arg:", k, v
-		if (k not in ['regions', 'refseqs']):
-			if v in [[''], []]:
-				v = None
-			else:
-				v = v[0]
-		args[k] = v
-		
-	return args
-
+### RENDER PAGES
 
 def choose_regions_page (args):
 	print "page A"
@@ -151,6 +116,43 @@ def show_results_page (args):
 		messages.append (('error', 'matching failed (unknown problem)'))
 		
 	return messages, formbuilder.show_results_form (args, results)
+
+
+### APPLICATION & PROCESSING
+
+def get_args (environ):
+	"""
+	Unpack arguments in appropriate way.
+	
+	Note that the awkward code below is actually legit if you are using POST
+	(which we are due to the size of what we're passing). If you use GET, it's
+	a lot simpler.
+	"""
+	# In this idiom you must issue a list containing a default value.
+	#age = d.get('age', [''])[0] # Returns the first age value.
+	#hobbies = d.get('hobbies', []) # Returns a list of hobbies.
+	
+	# Always escape user input to avoid script injection
+	#age = escape(age)
+	#hobbies = [escape(hobby) for hobby in hobbies]
+	
+	# grab args as a dict containing lists as values
+	try:
+		request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+	except (ValueError):
+		request_body_size = 0
+	request_body = environ['wsgi.input'].read(request_body_size)
+	args = {}
+	for k, v in parse_qs(request_body).iteritems():
+		print "arg:", k, v
+		if (k not in ['regions', 'refseqs']):
+			if v in [[''], []]:
+				v = None
+			else:
+				v = v[0]
+		args[k] = v
+		
+	return args
 
 
 def application(environ, start_response):
