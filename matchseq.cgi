@@ -71,14 +71,12 @@ def make_db_connection():
 ### RENDER PAGES
 
 def choose_regions_page (args):
-	print "page A"
 	all_regions = make_db_connection().select_regions()
 	rgn_tuples = [(r['id'], r['gene_region']) for r in all_regions]
 	return formbuilder.select_region_form (args, ALL_METHODS, rgn_tuples)
 
 
 def select_genes_page (args):
-	print "page B"
 	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
 	region_names = [r['gene_region'] for r in sel_regions]
 	available_genes = make_db_connection().select_seqs_by_regions (region_names)
@@ -91,8 +89,6 @@ def show_results_page (args):
 	
 	That means do the match and render the results. 
 	"""
-	print "page C"
-	
 	messages = []
 	
 	# gather the necessary arguments for everything
@@ -170,13 +166,11 @@ def application(environ, start_response):
 	# 3. third & final page, show results
 	if (args.get ("submit", False) in [False, config.SUBMIT_SELECT_REGIONS]):
 		# 1. if we are new to the form or have returned to the initial page
-		print "stage 1"
 		form_body = choose_regions_page (args)
 		
 	elif args.get ("submit", False) == config.SUBMIT_SELECT_GENES:
 		# 2. have just selected regions, if valid allow entry & selection of genes
 		# otherwise return to region selection
-		print "stage 2"
 		try:
 			# validate number of regions
 			assert (0 < len (args.get("regions", []))), \
@@ -202,7 +196,6 @@ def application(environ, start_response):
 		# 3. have entered & selected genes, if valid do match, otherwise return
 		# gene entry page
 		# TODO: check args
-		print "stage 3"
 		try:
 			# validate stuff
 			assert (config.MIN_REFSEQS <= len (args.get("refseqs", []))), \
