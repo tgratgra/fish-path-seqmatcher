@@ -10,11 +10,32 @@ __docformat__ = 'restructuredtext en'
 
 ### IMPORTS ###
 
+import re
+import string
+
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
+
+import fastacline
+import mafft
+import qjoincline
+
+
 ## CONSTANTS & DEFINES ###
+
+SEQNAME_RE = re.compile (r'[%s]' % re.escape (string.punctuation))
+SPACE_RE = re.compile (r'\s+')
+
 
 ### IMPLEMENTATION ###
 
-def db_seq_to_seqrec (rec):
+def clean_seqname (n):
+	n = SEQNAME_RE.sub (' ', n)
+	n = SPACE_RE.sub ('_', n.strip())
+	return n
+
+
+def db_seq_to_seqrec (rec, sel_regions):
 	"""
 	Convert a database record to a BioPython SeqRecord.
 	
@@ -26,7 +47,7 @@ def db_seq_to_seqrec (rec):
 	#sensible_name = rec['accession_number'] or rec['isolate_name'] or rec['id'] \
 	#	or '(unlabelled)'
 	sensible_name = "%s (%s)" % (rec['isolate_name'], rec['accession_number'])
-	seq = rec['nucleotide']
+	seq = rec['nucleotide_sequence']
 	
 	# gene_region seems to encode the actual region to be extracted
 	gene_region = rec['gene_region']
@@ -35,44 +56,56 @@ def db_seq_to_seqrec (rec):
 	for region in gene_region.split('|'):
 		array_region = region.split(";")
 		if (2 < len(array_region)>2):
-			thisgeneregion = array_region[2]
-			if (thisgeneregion == selectedgeneregion):
-				start = int(array_region[0]) - 1
-				end = int(array_region[1]) - 1
+			curr_region = array_region[2]
+			if (curr_region in sel_regions):
+				start = int (array_region[0]) - 1
+				end = int (array_region[1]) - 1
 				break
-	subseq = sequence[start:end]
+	subseq = rec['nucleotide_sequence'][start:end]
 						 
 	return SeqRecord (id=sensible_name, name=sensible_name, seq=Seq(subseq))
 	
 	
 	
 	
-def build_tree (method, selected_genes, target_seq):
+def match_seqs (method, selected_genes, sel_regions, target_seq, exepaths={}):
 	## Preconditions & preparation:
-	
-	bioseqs = [db_seq_to_seqrec (g) for g in selected_genes]
+	## Main:
+	# convert everything to Seqrecs
+	bioseqs = [db_seq_to_seqrec (g, sel_regions) for g in selected_genes]
 	if target_seq:
-		bioseqs.append (SeqRecord (id='QUERY', name='QUERY', seq=Seq (bioseq))
+		bioseqs. append (SeqRecord (id='QUERY', name='QUERY', seq=Seq (target_seq)))
 	
 	# align and build tree
 	results = []
 	
 	if (method == 'nj'):
-		mafft_app = mafft.MafftCline()
+		# clean up names for later display
+		for b in bioseqs:
+			b.id = clean_seqname (b.id)
+			b.name = clean_seqname (b.name)
+			
+		# now run
+		mafft_app = mafft.MafftCline (exepath=exepaths['mafft'])
 		mafft_app.run_fftns (bioseqs)
 		bp_alignment = mafft_app.extract_results()
-		cli = qjoincline.QjoinCline()
+		cli = qjoincline.QjoinCline (exepath=exepaths['qjoin'])
 		cli.run (bp_alignment)
 		phyl = cli.extract_results()
-		results.append (('tree', phyl))
+		results.append (('newicktree', phyl))
 		
 	elif (method == 'fasta'):
-		fcline = fastacline.FastaCline()
+		fcline = fastacline.FastaCline (exepath=exepaths['fasta'])
+		# because the target seq is last, nominate it as target
 		fcline.run (bioseqs[-1], bioseqs[:-1])
 		f_results = fcline.extract_results()
-		results.append (('table', f_results))
+		results.append (('fastamatchs', f_results))
+		
 	else:
 		raise StandardError, "unknown matching method '%s'" % method
+	
+	## Postconditions & return:
+	return results
 	
 	
 ### TEST & DEBUG ###

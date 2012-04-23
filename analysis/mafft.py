@@ -15,7 +15,7 @@ import os
 
 from Bio import SeqRecord, SeqIO, AlignIO
 
-from relais.dev import clineapp, scratchfile, fileutils
+import clineapp, scratchfile
 from relais.dev.common import *
 
 
@@ -127,12 +127,12 @@ class MafftCline (clineapp.ClineApp):
 		
 		Modified to direct output to file.
 		"""
-		MSG (clargs)
+		#MSG (clargs)
 		clargs = list (clargs) + [INSEQ_FILENAME]
-		MSG (clargs)
+		#MSG (clargs)
 		cmdline = clineapp.ClineApp._build_cmdline (self, *clargs)
 		cmdline += ' > %s' % OUTALIGN_FILENAME
-		MSG (cmdline)
+		#MSG (cmdline)
 		return cmdline
 		
 	def extract_results (self):

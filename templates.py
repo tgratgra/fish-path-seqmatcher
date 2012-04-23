@@ -14,10 +14,11 @@ Customize this (carefully) as you so wish.
 PAGE = """
 <html>
 	<head>
-		<!-- TODO: just for dev so wsgi doesn't  -->
 		<title>TESTING TESTING</title>
-		<!-- <link rel="stylesheet" type="text/css" href="./matchseq.css" /> -->
-		<link rel="shortcut icon" href="http://www.example.com/my_empty_resource" />
+		
+		<link rel="stylesheet" type="text/css" href="./media/css/matchseq.css" />
+		<script type="text/javascript" src="./media/js/raphael-min.js" ></script> 
+		<script type="text/javascript" src="./media/js/jsphylosvg-min.js"></script>
 		
 		<script language='javascript'>
 			function SetAllCheckBoxes(FormName, FieldName, CheckValue) {

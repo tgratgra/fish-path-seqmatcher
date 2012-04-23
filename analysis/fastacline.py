@@ -48,7 +48,7 @@ def count_ambigs (seq):
 	There's probably a better way to do this, but this will do with the moment.
 	Note that we assume the seq is lower case.
 	"""
-	MSG (seq)
+	#MSG (seq)
 	count = 0
 	for base in seq:
 		if base not in 'acgt':

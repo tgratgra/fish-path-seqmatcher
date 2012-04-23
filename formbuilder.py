@@ -11,10 +11,15 @@ __docformat__ = 'restructuredtext en'
 ### IMPORTS ###
 
 import types
+import exceptions
 
 import templates
 import htmltags
 import config
+
+from fastamatchviz import *
+from phylotextviz import *
+from phylosvgviz import *
 
 
 ### CONSTANTS & DEFINES ###
@@ -137,8 +142,13 @@ def seq_table_input (gene_choices, env={}):
 			else:
 				return "%s" % v
 			
-		print gene_choices
-		col_headers = ['accession_number', 'isolate_name', 'sequencing_method', 'author']
+
+		col_headers = [
+			'accession_number',
+			'isolate_name',
+			'sequencing_method',
+			'author'
+		]
 		
 		theader = htmltags.tag_with_contents ('thead',
 			htmltags.tag_with_contents ('tr',
@@ -209,10 +219,10 @@ def select_region_form (d, methods, region_choices):
 		<input type="hidden" name="_form_submitted" value="True" />
 		<input type="reset" value="Reset" />
 		<input type="submit" name="submit" value="%s" />	
-	""" % config.SUBMIT_SELECT_REGIONS
+	""" % config.SUBMIT_SELECT_GENES
 	
 	## Return:
-	return templates.FORM_BODY %  {
+	return templates.FORM_BODY % {
 		'TITLE': 'Step 1: Enter sequence, select method &amp; region',
 		'DESC': '',
 		'FIELDS': fields,
@@ -221,12 +231,7 @@ def select_region_form (d, methods, region_choices):
 	
 	
 def select_genes_form (d, gene_choices):
-	controls = """
-		<input type="hidden" name="_form_submitted" value="True">
-		<input type="reset" value="Reset">
-		<input type="submit" name="select_genes" value="Select genes">	
-	"""
-	print "D", d
+
 	hidden_inputs = '\n'.join ([
 		hidden_input ('seq', [d.get ('seq', '')]),
 		hidden_input ('regions', d['regions']),
@@ -240,13 +245,12 @@ def select_genes_form (d, gene_choices):
 
 	fields = seq_table_input (gene_choices)
 	
-	
 	controls = """
 		<input type="hidden" name="_form_submitted" value="True">
 		<input type="reset" value="Reset">
 		<input type="submit" name="submit" value="%s">
 		<input type="submit" name="submit" value="%s">
-	""" % (config.SUBMIT_RESELECT_REGIONS , config.SUBMIT_MATCH_GENES)
+	""" % (config.SUBMIT_SELECT_REGIONS , config.SUBMIT_MATCH_GENES)
 	
 	## Return:
 	return templates.FORM_BODY %  {
@@ -256,8 +260,45 @@ def select_genes_form (d, gene_choices):
 		'CONTROLS': controls,
 	}
 
-def show_results_form (d, gene_choices):
-	return ['foo', 'bar'], select_genes_form (d, gene_choices)
+
+def show_results_form (d, results):
+	
+	results_viz = ''
+	
+	# so we can handle multiple results
+	for r in results:
+		print "R", r
+		if r[0] in ['tree', 'newicktree']:
+			results_viz += PhyloTextViz (r[1]).render()
+			results_viz += PhyloSvgViz (r[1]).render()
+		elif r[0] in ['fastamatchs']:
+			results_viz += FastaMatchViz (r[1]).render()
+		else:
+			raise ValueError, "unknown result type '%s'" % results[0]
+		
+	hidden_inputs = '\n'.join ([
+		hidden_input ('seq', [d.get ('seq', '')]),
+		hidden_input ('regions', d['regions']),
+		hidden_input ('refseqs', d['refseqs']),
+		hidden_input ('match_by', [d['match_by']]),
+		])
+	
+	controls = """
+		<input type="hidden" name="_form_submitted" value="True">
+		<input type="submit" name="submit" value="%s">
+		<input type="submit" name="submit" value="%s">
+	""" % (config.SUBMIT_SELECT_REGIONS, config.SUBMIT_SELECT_GENES)
+	
+	## Return:
+	return templates.FORM_BODY %  {
+		'TITLE': 'Step 3: Show results',
+		'DESC': '',
+		'FIELDS': '\n\n'.join ([results_viz, hidden_inputs]),
+		'CONTROLS': controls,
+	}
+	
+	
+
 
 ### TEST & DEBUG ###
 

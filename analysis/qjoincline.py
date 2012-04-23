@@ -13,10 +13,9 @@ import os
 
 from Bio import AlignIO
 
-from relais.dev.common import *
-from relais.dev import clineapp, scratchfile
+import clineapp
+import scratchfile
 
-import qjoinreader
 
 __all__ = [
 	'QJoinCline',
@@ -55,7 +54,7 @@ class QjoinCline (clineapp.ClineApp):
 		self._inalign_path = scratchfile.make_scratch_file (INALIGN_NAME,
 			self._curr_workdir)
 		# write infile workfile
-		MSG (self._curr_workdir, self._inalign_path)
+		#MSG (self._curr_workdir, self._inalign_path)
 		infile_hndl = open (self._inalign_path, 'w')
 		AlignIO.write ([self._in_align], infile_hndl, 'stockholm')
 
@@ -103,11 +102,13 @@ class QjoinCline (clineapp.ClineApp):
 		## Main:
 		# extract the data
 		output_hndl = open (output_path, 'rU')
-		rdr = qjoinreader.QjoinReader (output_hndl)
-		tree = rdr.read()
+		tree_str = output_hndl.read()
 		output_hndl.close()
+
+		tmp_tree = tree_str.split('\n\n')[0]
+		dist_tree = tmp_tree.split(':', 1)[1]
 		## Postconditions:
-		return tree
+		return dist_tree
 			
 			
 	def set_input_alignment (self, align):

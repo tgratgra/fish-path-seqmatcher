@@ -24,6 +24,7 @@ __author__ = 'Paul-Michael Agapow (pma@agapow,net)'
 
 ### IMPORTS
 
+import re
 from cgi import parse_qs, escape
 from exceptions import AssertionError
 
@@ -31,10 +32,12 @@ import config
 import templates
 import formbuilder
 import dbconn
-from treebuilder import build_tree
+from analysis import match_seqs
 
 
 ### CONSTANTS & DEFINES
+
+SPACE_RE = re.compile (r'\s+')
 
 # all comparison methods available
 ALL_METHODS = [
@@ -45,6 +48,15 @@ ALL_METHODS = [
 
 ### IMPLEMENTATION ###
 
+def dev_show_traceback():
+	if config.DEV_MODE:
+		import sys, traceback
+		print "Exception in user code:"
+		print '-' * 60
+		traceback.print_exc (file=sys.stdout)
+		print '-' * 60
+	
+	
 def make_db_connection():
 	return dbconn.DbConn (
 		protocol = config.DB_TYPE,
@@ -89,18 +101,17 @@ def get_args (environ):
 				v = v[0]
 		args[k] = v
 		
-	print "KEYS: %s " % args.keys()
 	return args
 
 
-def render_choose_regions (args):
+def choose_regions_page (args):
 	print "page A"
 	all_regions = make_db_connection().select_regions()
 	rgn_tuples = [(r['id'], r['gene_region']) for r in all_regions]
 	return formbuilder.select_region_form (args, ALL_METHODS, rgn_tuples)
 
 
-def render_select_genes (args):
+def select_genes_page (args):
 	print "page B"
 	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
 	region_names = [r['gene_region'] for r in sel_regions]
@@ -108,30 +119,44 @@ def render_select_genes (args):
 	return formbuilder.select_genes_form (args, available_genes)
 
 
-def render_show_results (args):
+def show_results_page (args):
+	"""
+	Perform the actions required for the search results page.
+	
+	That means do the match and render the results. 
+	"""
 	print "page C"
+	
 	messages = []
-	selected_genes = make_db_connection().select_seqs_by_ids (args['refseqs'])
-	messages.append (('note', '%s reference genes selected for matching' % len (selected_genes)))
-	target_seq = args['seq']
+	
+	# gather the necessary arguments for everything
+	sel_genes = make_db_connection().select_seqs_by_ids (args['refseqs'])
+	messages.append (('note', '%s reference genes selected for matching' %
+		len (sel_genes)))
+	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
+	region_names = [r['gene_region'] for r in sel_regions]
+	messages.append (('note', 'reference genes selected from genomic regions %s' %
+		', '.join(region_names)))
+	target_seq = args.get ('seq', '')
 	method = args['match_by']
 	
-	tree_str = ''
+	results = ''
 	try:
-		tree_str = build_tree (method, selected_genes, target_gene_seq)
+		results = match_seqs (method, sel_genes, region_names, target_seq,
+			config.EXEPATHS)
 	except StandardError, err:
+		dev_show_traceback()
 		messages.append (('error', 'matching failed (%s)' % str(err)))
 	except:
 		messages.append (('error', 'matching failed (unknown problem)'))
 		
-	return messages, formbuilder.show_results_form (args, available_genes, tree)
+	return messages, formbuilder.show_results_form (args, results)
 
 
 def application(environ, start_response):
 
 	# get the passed values, if any
 	args = get_args (environ)
-	print "ARGS: %s" % args
 	
 	# process request
 	messages = []
@@ -141,41 +166,57 @@ def application(environ, start_response):
 	# 1. opening page, enter seq, select region
 	# 2. second page, select method & enter sequence
 	# 3. third & final page, show results
-	if (args.get ("submit", False) in [False, config.SUBMIT_RESELECT_REGIONS]):
+	if (args.get ("submit", False) in [False, config.SUBMIT_SELECT_REGIONS]):
 		# 1. if we are new to the form or have returned to the initial page
 		print "stage 1"
-		form_body =  render_choose_regions (args)
-	elif args.get ("submit", config.SUBMIT_SELECT_REGIONS):
+		form_body = choose_regions_page (args)
+		
+	elif args.get ("submit", False) == config.SUBMIT_SELECT_GENES:
 		# 2. have just selected regions, if valid allow entry & selection of genes
 		# otherwise return to region selection
 		print "stage 2"
 		try:
-			assert (0 < len (args.get("regions", []))), "need to select at least 1 region"
+			# validate number of regions
+			assert (0 < len (args.get("regions", []))), \
+				"need to select at least 1 region"
 			messages.append (('note', 'gene regions and matching method selected'))
-			form_body = render_select_genes (args)
-		except AssertionError, err:
+			# validate & clean seq
+			target_seq = SPACE_RE.sub ('', args.get("seq", '')).upper()
+			for i,x in enumerate (target_seq):
+				assert x in 'GATCRYWSMKHBVDN-', \
+					"nucleotide '%s' at position %s is not a legal symbol" % (x, i+1)
+			args['seq'] = target_seq
+			# validate method
+			if args['match_by'] == 'fasta':
+				assert target_seq, "Fasta comparsion requires a target sequence"
+			# okay, we're good, do the form
+			form_body = select_genes_page (args)
+		except StandardError, err:
 			# TODO: handle err & append error message
 			messages.append (('error', str(err)))
-			form_body = render_choose_regions (args)
-			print "MESS", messages
-	elif args.get ("submit", config.SUBMIT_MATCH_GENES):
+			form_body = choose_regions_page (args)
+
+	elif args.get ("submit", False) == config.SUBMIT_MATCH_GENES:
 		# 3. have entered & selected genes, if valid do match, otherwise return
 		# gene entry page
 		# TODO: check args
 		print "stage 3"
-		if (True):
+		try:
 			# TODO: render results
-			assert (0 < len (args.get("refseqs", []))), "need to select at least 3 reference sequences"
+			assert (config.MIN_REFSEQS <= len (args.get("refseqs", []))), \
+				"need to select at least %s reference sequences" % config.MIN_REFSEQS
 			messages.append (('note', 'genes selected'))
-			msgs, form_body = formbuilder.render_show_results (args)
+			msgs, form_body = show_results_page (args)
 			messages.extend (msgs)
-		else:
-			# go back to the page
-			# TODO: append error message
-			form_body = formbuilder.render_select_genes (args)
+		except StandardError, err:
+			dev_show_traceback()
+			# TODO: handle err & append error message
+			messages.append (('error', str(err)))
+			form_body = select_genes_page (args)
+			
 	else:
 		print "SHOULD NOT GET HERE", args
-	print "DO I GET HERE"
+	
 	# build page to return
 	response_body = (templates.PAGE % {
 		'MESSAGES': '\n'.join (['<p class="%s">%s</p>' % (r[0], r[1]) for r in messages]),
