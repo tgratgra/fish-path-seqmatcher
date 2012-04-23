@@ -29,10 +29,11 @@ from cgi import parse_qs, escape
 from exceptions import AssertionError
 
 import config
-import templates
-import formbuilder
 import dbconn
+import views.config as view_config
 from analysis import match_seqs
+from views import templates
+from views import formbuilder
 
 
 ### CONSTANTS & DEFINES

@@ -15,8 +15,9 @@ import textwrap, os
 
 from Bio import SeqRecord
 
-from relais.dev.common import *
-from relais.dev import clineapp, scratchfile
+#from relais.dev.common import *
+#from relais.dev import clineapp, scratchfile
+import clineapp, scratchfile
 
 import fastareader
 
