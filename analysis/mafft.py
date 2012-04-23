@@ -16,7 +16,7 @@ import os
 from Bio import SeqRecord, SeqIO, AlignIO
 
 import clineapp, scratchfile
-from relais.dev.common import *
+#from relais.dev.common import *
 
 
 ## CONSTANTS & DEFINES ###

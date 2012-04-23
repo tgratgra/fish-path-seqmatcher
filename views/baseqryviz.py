@@ -10,9 +10,7 @@ __docformat__ = 'restructuredtext en'
 
 ### IMPORTS ###
 
-from relais.dev import mountpoint, enum
-
-from relais.dev.htmltag import *
+from htmltags import *
 
 
 __all__ = [
@@ -25,7 +23,6 @@ __all__ = [
 ### IMPLEMENTATION ###	
 
 class BaseQryViz (object):
-	__metaclass__ = mountpoint.Mountpoint
 	"""
 	Base class for query result visualisations.
 	

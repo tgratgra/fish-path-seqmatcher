@@ -12,7 +12,7 @@ __docformat__ = 'restructuredtext en'
 
 import re
 
-from relais.dev.io.readers import singlereader
+#from relais.dev.io.readers import singlereader
 
 
 ## CONSTANTS & DEFINES ###
@@ -56,9 +56,9 @@ class FastaMatch (object):
 	res_matched = property (_get_res_matched)
 
 
-class FastaReader (singlereader.SingleReader):
+class FastaReader (object):
 	def __init__ (self, src):
-		singlereader.SingleReader.__init__ (self, src=src)
+		self.src = src
 		
 	def read (self):
 		"""

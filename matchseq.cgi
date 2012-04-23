@@ -145,7 +145,6 @@ def get_args (environ):
 	request_body = environ['wsgi.input'].read(request_body_size)
 	args = {}
 	for k, v in parse_qs(request_body).iteritems():
-		print "arg:", k, v
 		if (k not in ['regions', 'refseqs']):
 			if v in [[''], []]:
 				v = None
@@ -182,7 +181,6 @@ def application(environ, start_response):
 			# validate number of regions
 			assert (0 < len (args.get("regions", []))), \
 				"need to select at least 1 region"
-			messages.append (('note', 'gene regions and matching method selected'))
 			# validate & clean seq
 			target_seq = SPACE_RE.sub ('', args.get("seq", '')).upper()
 			for i,x in enumerate (target_seq):
@@ -191,8 +189,9 @@ def application(environ, start_response):
 			args['seq'] = target_seq
 			# validate method
 			if args['match_by'] == 'fasta':
-				assert target_seq, "Fasta comparsion requires a target sequence"
+				assert target_seq, "Fasta comparison requires a target sequence"
 			# okay, we're good, do the form
+			messages.append (('note', 'gene regions and matching method selected'))
 			form_body = select_genes_page (args)
 		except StandardError, err:
 			# TODO: handle err & append error message
@@ -205,9 +204,10 @@ def application(environ, start_response):
 		# TODO: check args
 		print "stage 3"
 		try:
-			# TODO: render results
+			# validate stuff
 			assert (config.MIN_REFSEQS <= len (args.get("refseqs", []))), \
 				"need to select at least %s reference sequences" % config.MIN_REFSEQS
+			# okay, we're good, do the form
 			messages.append (('note', 'genes selected'))
 			msgs, form_body = show_results_page (args)
 			messages.extend (msgs)

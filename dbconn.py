@@ -124,7 +124,6 @@ class DbConn (object):
 			', '.join (["%s" % x for x in ids]),
 			config.SEQLIMIT,
 		)
-		print qry
 		
 		cursor = self.conn.cursor()
 		cursor.execute (qry)
