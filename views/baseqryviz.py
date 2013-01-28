@@ -3,6 +3,8 @@
 """
 Base class for query result visualisations.
 
+This is all far too ornate for what's needed in FishPath, but is a bowdlerized
+version of the original & more complex code that it has been ripped from.
 """
 
 __docformat__ = 'restructuredtext en'
@@ -39,13 +41,6 @@ class BaseQryViz (object):
 		self.context = context
 		self.files = {}
 		self.images = {}
-
-	@classmethod
-	def required_resources (cls):
-		"""
-		What external resources should be loaded in order to render the form?
-		"""
-		return cls.resources
 
 	def render (self):
 		return u'<div>blah</blah>'

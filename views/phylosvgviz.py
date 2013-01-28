@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Visualise a phylogeny  in SVG using jsPhyloSVG
+Visualise a phylogeny in SVG using jsPhyloSVG
 
 """
 
@@ -11,10 +11,13 @@ __docformat__ = 'restructuredtext en'
 ### IMPORTS ###
 
 import re
+from copy import deepcopy
 
 from htmltags import *
 import baseqryviz
+from utils import treeutils, jsutils
 
+import config
 
 __all__ = [
 	'PhyloSvgViz',
@@ -30,25 +33,77 @@ class PhyloSvgViz (baseqryviz.BaseQryViz):
 	label='Visualise a phylogeny  in SVG'
 	resources = []
 	
+	def copyAndCleanTree (self):
+		"""
+		Make the tree suitable for use by jsPhyloSVG
+		"""
+		# TODO: Need to do several things here:
+		# - NoNames
+		# - copy support scores to internal branch names
+
+		## Main:
+		# Copy the tree so as not to damage original
+		ete_tree = deepcopy (self.data)
+
+		# set root branch to zero, make change later
+		ete_tree.dist = 0.0
+
+		# find max / min branchlength for diagnostic purposes
+		# doesn't use negative or zero branch lengths
+		# Also clean names
+		max_bl = None
+		min_bl = None
+		for n in ete_tree.traverse ("postorder"):
+			if (0.0 < n.dist):
+				if (max_bl is None) or (max_bl < n.dist):
+					max_bl = n.dist
+				if (min_bl is None) or (n.dist < min_bl):
+					min_bl = n.dist
+			clean_name = n.name.strip()
+			if (clean_name[0] == "'") and (clean_name[-1] == "'"):
+				clean_name = clean_name[1:-1]
+			n.name = clean_name
+
+		# set all branches to be at least 1/100 of the largest or 1/10 the
+		# smallest, whichever is larger
+		default_bl = max (max_bl / 100, min_bl/10)
+		for n in ete_tree.traverse ("postorder"):
+			if (n.dist <= 0.0):
+				n.dist = default_bl
+
+		## Postcondtions & return:
+		return ete_tree
+
 	def render (self):
-		tree_str = self.data
+		ete_tree = self.copyAndCleanTree()
+
+		tree_xml = treeutils.tree_to_phyloxml (ete_tree)
+		js_xml = jsutils.make_js_str (tree_xml)
 		
-		# need to clean up data
-		tree_str = re.sub ("'", '', tree_str)
-		tree_str = re.sub (r'\s+', '', tree_str)
-		
+		debug_str = """1:
+			<textarea rows="20" cols="60">%s</textarea>
+			2:
+			<textarea rows="20" cols="60">%s</textarea>
+		""" % (tree_xml, js_xml)
+
 		# return appropriate 
-		return """
+		return debug_str + """
 <div id="svgCanvas"> </div>
 <script type="text/javascript">
-	var dataObject = { newick: '%s' };
+	var dataObject = { phyloxml: '%(TREE_STR)s' };
 	phylocanvas = new Smits.PhyloCanvas(
 		dataObject,
 		'svgCanvas', 
-		500, 500
+		%(HT)s, %(WT)s,
+		'%(SHAPE)s'
 	);
 </script>
-	""" % tree_str
+	""" % {
+		'TREE_STR'  : js_xml,
+		'SHAPE'     : config.TREE_SHAPE,
+		'HT'        : config.TREE_HT,
+		'WT'        : config.TREE_WT,
+	}
 
 
 

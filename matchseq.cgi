@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2.6
 """
 A simple webservice for matching sequences to a pre-existing library of seqs.
 
@@ -18,7 +18,7 @@ or the region searched).
 ###
 
 
-__version__ = '0.2'
+__version__ = '0.4'
 __author__ = 'Paul-Michael Agapow (pma@agapow,net)'
 
 
@@ -27,9 +27,14 @@ __author__ = 'Paul-Michael Agapow (pma@agapow,net)'
 import re
 from cgi import parse_qs, escape
 from exceptions import AssertionError
+import sys
+import types
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 import config
-import dbconn
+from utils import dbconn
 import views.config as view_config
 from analysis import match_seqs
 from views import templates
@@ -50,12 +55,17 @@ ALL_METHODS = [
 ### IMPLEMENTATION ###
 
 def dev_show_traceback():
-	if config.DEV_MODE:
+	if config.DEV_MODE or config.CAPTURE_TRACEBACKS:
 		import sys, traceback
-		print "Exception in user code:"
-		print '-' * 60
-		traceback.print_exc (file=sys.stdout)
-		print '-' * 60
+		print >> sys.stderr, "Exception in user code:"
+		print >> sys.stderr, '-' * 60
+		traceback.print_exc (file=sys.stderr)
+		print >> sys.stderr, '-' * 60
+
+
+def debug_msg(s):
+	if config.DEV_MODE:
+		print >> sys.stderr, "DEBUG: %s" % s
 	
 	
 def make_db_connection():
@@ -70,16 +80,22 @@ def make_db_connection():
 
 ### RENDER PAGES
 
+def choose_pathogen_page (args):
+	all_pathogens = make_db_connection().select_pathogens()
+	patho_tuples = [(r['id'], '%s: %s' % (r['title'], r.get('desc', '') or '')) for r in all_pathogens]
+	return formbuilder.select_pathogen_form (args, ALL_METHODS, patho_tuples)
+
+
 def choose_regions_page (args):
-	all_regions = make_db_connection().select_regions()
+	all_regions = make_db_connection().select_regions (args['pathogen'])
 	rgn_tuples = [(r['id'], r['gene_region']) for r in all_regions]
 	return formbuilder.select_region_form (args, ALL_METHODS, rgn_tuples)
 
 
 def select_genes_page (args):
-	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
+	sel_regions = make_db_connection().select_regions_by_ids (args['pathogen'], args['regions'])
 	region_names = [r['gene_region'] for r in sel_regions]
-	available_genes = make_db_connection().select_seqs_by_regions (region_names)
+	available_genes = make_db_connection().select_seqs_by_regions (args['pathogen'], region_names)
 	return formbuilder.select_genes_form (args, available_genes)
 
 
@@ -92,20 +108,22 @@ def show_results_page (args):
 	messages = []
 	
 	# gather the necessary arguments for everything
-	sel_genes = make_db_connection().select_seqs_by_ids (args['refseqs'])
+	sel_genes = make_db_connection().select_seqs_by_ids (args['pathogen'], args['refseqs'])
 	messages.append (('note', '%s reference genes selected for matching' %
 		len (sel_genes)))
-	sel_regions = make_db_connection().select_regions_by_ids (args['regions'])
+	sel_regions = make_db_connection().select_regions_by_ids (args['pathogen'], args['regions'])
 	region_names = [r['gene_region'] for r in sel_regions]
 	messages.append (('note', 'reference genes selected from genomic regions %s' %
 		', '.join(region_names)))
 	target_seq = args.get ('seq', '')
 	method = args['match_by']
+	outgroup = args['outgroup']
 	
 	results = ''
 	try:
+		# will return either a table of fasta matches or an etet2 tree, rerooted 
 		results = match_seqs (method, sel_genes, region_names, target_seq,
-			config.EXEPATHS)
+			outgroup, config.EXEPATHS)
 	except StandardError, err:
 		dev_show_traceback()
 		messages.append (('error', 'matching failed (%s)' % str(err)))
@@ -116,6 +134,39 @@ def show_results_page (args):
 
 
 ### APPLICATION & PROCESSING
+
+### HANDLING PASSED ARGUMENTS ###
+
+class CgiArgs (object):
+
+	def __init__ (self, env):
+		self._args = get_args (env)
+
+	def get (self, key, default=None):
+		return self._args.get (key, default)
+
+	def get_list (self, key):
+		return self.get (key, [])
+
+	def __getitem__ (self, key):
+		return self.get (key)
+
+	def set (self, key, val):
+		self._args[key] = val
+
+	def __setitem__ (self, key, val):
+		self.set (key, val)
+
+	def append_list (self, key, val):
+		old_val = self.get_list (key)
+		assert (type (old_val) == type ([]))
+		old_val.append (val)
+		self.set (key, old_val)
+
+	def set_list (self, key, val_list):
+		assert (type (val_list) in [types.ListType, types.Tuple.Type])
+		self.set (List (val_list))
+
 
 def get_args (environ):
 	"""
@@ -132,15 +183,22 @@ def get_args (environ):
 	# Always escape user input to avoid script injection
 	#age = escape(age)
 	#hobbies = [escape(hobby) for hobby in hobbies]
-	
-	# grab args as a dict containing lists as values
-	try:
-		request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-	except (ValueError):
-		request_body_size = 0
-	request_body = environ['wsgi.input'].read(request_body_size)
+	if config.REQUEST_METHOD == 'POST':	
+		# grab args as a dict containing lists as values
+		try:
+			request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+		except (ValueError):
+			request_body_size = 0
+		request_body = environ['wsgi.input'].read(request_body_size)
+		raw_arg_dict = parse_qs (request_body)
+	else:
+		# method is 'GET'
+		debug_msg("querystring=%s" % environ.get ('QUERY_STRING', ''))
+		raw_arg_dict = parse_qs(environ.get ('QUERY_STRING', ''))
+		debug_msg(raw_arg_dict)
+
 	args = {}
-	for k, v in parse_qs(request_body).iteritems():
+	for k, v in raw_arg_dict.iteritems():
 		if (k not in ['regions', 'refseqs']):
 			if v in [[''], []]:
 				v = None
@@ -160,17 +218,27 @@ def application(environ, start_response):
 	messages = []
 	results = []
 	
-	# the form can be in 3 different states or stages as we progress thru form:
-	# 1. opening page, enter seq, select region
+	# the form can be in 4 different states or stages as we progress thru form:
+	# 0. opening page. select the pathogen
+	# 1. enter seq, select region
 	# 2. second page, select method & enter sequence
 	# 3. third & final page, show results
-	if (args.get ("submit", False) in [False, config.SUBMIT_SELECT_REGIONS]):
-		# 1. if we are new to the form or have returned to the initial page
+	if (args.get ("submit", False) in [False, config.SUBMIT_SELECT_PATHOGEN]):
+		# 0. if we are new to the form or have returned to the initial page
+		debug_msg("submit=selectpathogen")
+		form_body = choose_pathogen_page (args)
+		
+	if (args.get ("submit", False) == config.SUBMIT_SELECT_REGIONS):
+		# 1. have selected pathogen
+		# could popssibly route straight to here
+		# must validate pathogen choice
+		debug_msg("submit=selectregions")
 		form_body = choose_regions_page (args)
 		
 	elif args.get ("submit", False) == config.SUBMIT_SELECT_GENES:
 		# 2. have just selected regions, if valid allow entry & selection of genes
 		# otherwise return to region selection
+		debug_msg("submit=selectgenes")
 		try:
 			# validate number of regions
 			assert (0 < len (args.get("regions", []))), \
@@ -189,6 +257,7 @@ def application(environ, start_response):
 			form_body = select_genes_page (args)
 		except StandardError, err:
 			# TODO: handle err & append error message
+			dev_show_traceback()
 			messages.append (('error', str(err)))
 			form_body = choose_regions_page (args)
 
@@ -196,14 +265,24 @@ def application(environ, start_response):
 		# 3. have entered & selected genes, if valid do match, otherwise return
 		# gene entry page
 		# TODO: check args
+		debug_msg("submit=matchgenes")
 		try:
-			# validate stuff
-			assert (config.MIN_REFSEQS <= len (args.get("refseqs", []))), \
+			## extract, validate, & cleanse arguments ...
+			# ... outgroup may or may not be in refseqs, add if necessary
+			ref_seqs = args.get("refseqs", [])
+			outgroup = args.get ('outgroup', None)
+			if outgroup and (outgroup not in ref_seqs):
+				ref_seqs.append (outgroup)
+				args['ref_seqs'] = ref_seqs
+			# ... check min number of ref seqs
+			assert (config.MIN_REFSEQS <= len (ref_seqs)), \
 				"need to select at least %s reference sequences" % config.MIN_REFSEQS
-			# okay, we're good, do the form
+
+			## okay, we're good, now process the page
 			messages.append (('note', 'genes selected'))
 			msgs, form_body = show_results_page (args)
 			messages.extend (msgs)
+
 		except StandardError, err:
 			dev_show_traceback()
 			# TODO: handle err & append error message
@@ -211,13 +290,15 @@ def application(environ, start_response):
 			form_body = select_genes_page (args)
 			
 	else:
-		print "SHOULD NOT GET HERE", args
+		sys.stderr.write ("%s\n" % args)
+		print >> sys.stderr, "SHOULD NOT GET HERE (css fetch error in debug may cause)", args
 	
 	# build page to return
 	response_body = (templates.PAGE % {
-		'MESSAGES': '\n'.join (['<p class="%s">%s</p>' % (r[0], r[1]) for r in messages]),
+		'MESSAGES': '\n'.join (['<p class="%s">%s: %s</p>' % (r[0], r[0].title(), r[1]) for r in messages]),
 		'RESULTS': '\n'.join (results),
 		'SCRIPT_NAME': __file__,
+		'METHOD': config.REQUEST_METHOD,
 		'FORM': form_body,
 	}).encode ('utf-8')
 	response_headers = [
@@ -239,14 +320,8 @@ def application(environ, start_response):
 # Note that this doesn't serve static content.
 if __name__ == '__main__':
 	if config.DEV_MODE:
-		# These settings are to be used solely for the purposes of testing and
-		# development and should not be taken as advisory for production.
-		
-		TEST_ADDR = "158.119.147.40"
-		TEST_PORT = 9123
-		
 		from wsgiref.simple_server import make_server
-		httpd = make_server (TEST_ADDR, TEST_PORT, application)
+		httpd = make_server (config.TEST_ADDR, config.TEST_PORT, application)
 		httpd.serve_forever()
 	else:
 		import wsgiref.handlers

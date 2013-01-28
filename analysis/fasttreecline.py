@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Phylogenetic reconstruction via the qjoin commandline program.
+Phylogenetic reconstruction via the fasttree commandline program.
 """
 
 __docformat__ = 'restructuredtext en'
@@ -18,7 +18,7 @@ import scratchfile
 
 
 __all__ = [
-	'QJoinCline',
+	'FasttreeCline',
 ]
 
 
@@ -30,10 +30,16 @@ OUTTREE_NAME = 'out.txt'
 
 ### IMPLEMENTATION ###
 
-class QjoinCline (clineapp.ClineApp):
+class FasttreeCline (clineapp.ClineApp):
 	"""
-	A class for calling qjoin for phylogenetic reconstruction.
+	A class for calling FastTree for phylogenetic reconstruction.
 	
+	FastTree is called::
+
+		FastTree alignment.file > tree_file
+
+	where the alignment is a fasta formatted sequence and the output tree is Newisk.
+
 	"""
 	def __init__ (self, exepath='/usr/local/bin/qjoin'):
 		clineapp.ClineApp.__init__ (self, exepath, use_workdir=True,
@@ -41,7 +47,7 @@ class QjoinCline (clineapp.ClineApp):
 			
 	def setup_workdir (self):
 		"""
-		Prepare the necessary input files for Qjoin.
+		Prepare the necessary input files for FastTree.
 
 		This creates a temporary working area, and writes input alignment
 		files.
@@ -54,13 +60,12 @@ class QjoinCline (clineapp.ClineApp):
 		self._inalign_path = scratchfile.make_scratch_file (INALIGN_NAME,
 			self._curr_workdir)
 		# write infile workfile
-		#MSG (self._curr_workdir, self._inalign_path)
 		infile_hndl = open (self._inalign_path, 'w')
-		AlignIO.write ([self._in_align], infile_hndl, 'stockholm')
+		AlignIO.write ([self._in_align], infile_hndl, 'fasta')
 
-	def run (self, align, num_bootstraps=0):
+	def run (self, align):
 		"""
-		Run Qjoin to reconstruct a tree from an alignment.
+		Run FT to reconstruct a tree from an alignment.
 
 		:Params:
 			align : Biopython alignment
@@ -74,11 +79,11 @@ class QjoinCline (clineapp.ClineApp):
 		self.set_input_alignment (align)
 		## Main:
 		cmdopts = [
+			'-nt',
 			INALIGN_NAME,
+			'>',
 			OUTTREE_NAME,
 		]
-		#if (num_bootstraps):
-		#	cmdopts.append ('--bootstrap=%s' % num_bootstraps) 
 		
 		self.call_cmdline (*cmdopts)
 		
@@ -90,7 +95,7 @@ class QjoinCline (clineapp.ClineApp):
 		check the status and error output first.
 		
 		:Returns:
-			An ete2 tree object, containg both branchlengths and supports.
+			A ptree object.
 		
 		"""
 		## Preconditions:
@@ -102,30 +107,11 @@ class QjoinCline (clineapp.ClineApp):
 		## Main:
 		# extract the data
 		output_hndl = open (output_path, 'rU')
-		tree_str = output_hndl.read()
+		nex_str = output_hndl.read()
 		output_hndl.close()
 
-		# split the two trees
-		tmp_list = tree_str.split('\n\n')
-		support_tree_str = tmp_list[1].split(':', 1)[1].strip()
-		dist_tree_str = tmp_list[0].split(':', 1)[1].strip()
-
-		# convert to ete form and merge
-		import ete2
-
-		dist_tree = ete2.Tree (dist_tree_str)
-		support_tree = ete2.Tree (support_tree_str)
-
-		dist_nodes = [n for n in dist_tree.traverse ("postorder")]
-		support_nodes = [n for n in support_tree.traverse ("postorder")]
-
-		for i in range (len (dist_nodes)):
-			d_node = dist_nodes[i]
-			s_node = support_nodes[i]
-			d_node.support = s_node.support
-
 		## Postconditions:
-		return dist_tree
+		return nex_str
 			
 			
 	def set_input_alignment (self, align):

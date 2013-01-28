@@ -1,0 +1,15 @@
+=======
+CHANGES
+=======
+
+
+2012.06.25
+----------
+
+- deleted historical and unnecessary code from phylosvgqry.py 
+
+- delete extraneous hidden field (_form_submitted) from submit in form template. Also vestige of previous version.
+
+- included square rendering in phylotree
+
+- allowed tree shape and size to be set in view configs (views/config.py)

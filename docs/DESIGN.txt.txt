@@ -1,0 +1,55 @@
+Design notes
+============
+
+What was done and why.
+
+
+Configuration
+-------------
+
+Awkwardly, the views need to know about configuration values. As they are in a subdir, the decision was made to make a view-speific configuration file. 
+
+
+CGI
+---
+
+Note that CGI arguments can be presented in a number of ways. Thus the slightly intricate parsing.
+
+It's very difficult to relaibly catch logs/errors from a CGI program running in situ. It's best to dev using the Python WSGI mock and go from there.
+
+
+Phylogenetic reconstruction
+---------------------------
+
+The original decision was made to use Quickjoin because it was fast and reliable. This presented a later problem as it returns two trees: one with branch lengths and one with support values. Looking for alternatives, there aren't a lot of usable neighbour-joining programs that return trees with both lengths and supports, so I decided to keep Quickjoin and just merge the two. 
+
+Note that all NJ programs will sometimes return trees with negative branchlengths. 
+
+One rerooting was required, a better tree representation kit was needed. Ete2 was selected, although some peculiarities were found. For exampkle, while to reads and writes Newick, PhyloXML and NexML, it does nto seem to be able to convert between them. (The trees are stored in different internal formats. Hence why I wrote a manual XML output function.) Also, Ete2 like to call internal nodes "NoName" and when reading quoted names from Newick trees, keeps the quotes as part of the name. Noetheless, Ete2 is a useful lingua franca for trees within the program. 
+
+
+Views
+-----
+
+In retrospect, it would have been helpful to use a full template system like Cheetah.
+
+Note that if you are doing a Fasta match, the form will still ask you for an outgroup. This could probably be fixed.
+
+
+Tree display
+------------
+
+JsPhyloSVG works reasonably well but:
+
+- if you create the display with a newick formatted tree, not all features are supported.
+
+- while PhyloXml supports more features, error detection for malformed trees is non-existent. The tree just fails to render and sometimes spins.
+
+- negatives branch lengths are drawn as brnaches going backwards.
+
+- There's a peculair and elusive error that results in either the tree not rendering or rendering as a single straight line. This could be corrected by drawing something else in the canvas. It appears to have soemthing to very different branchlengths within a tree, specifically a very long root branch (the branch going to "the outside world") and very small or 0.0 branch lengths at the tip.
+
+- in the input data 'fileSource' must be set to false, or not defined, otherwise the the inpout will almost certainly be misparsed
+
+- including PhyloXML in a webpage is a pain due to javascripts multiline issues. Might be easier to pass JSON.
+

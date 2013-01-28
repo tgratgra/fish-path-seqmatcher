@@ -266,7 +266,7 @@ class ClineApp (object):
 			self._curr_workdir = self.workdir
 			if (not self._curr_workdir):
 				self._curr_workdir = scratchfile.make_scratch_dir()
-		print self._curr_workdir
+		#print self._curr_workdir
 				
 	def cleanup_workdir (self):
 		"""

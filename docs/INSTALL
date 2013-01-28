@@ -1,0 +1,98 @@
+=========================
+INSTALLATION INSTRUCTIONS
+=========================
+
+Matchseq is a CGI program that matches sequences against references in the fish
+pathogen database.
+
+
+Prerequisites
+-------------
+
+This is a Python script that uses the WSGI interface, and as such requires Python 2.6+
+
+Two libraraies must be installed for this Python:
+
+- BioPython
+- MySQLdb (for the databse access)
+
+In addition a number of external binaries are called by the script
+
+- Mafft
+- Qjoin
+- Fasta (a recent version)
+
+
+Installing the script
+---------------------
+
+Drop this unpacked archive into the appropriate cgi-bin directory.
+
+Permissions will have to be set appropriately so that the main script is served
+as CGI, and assets (images, stylesheets etc.) are served as normal. Something
+like this is required (which is served from http://cgi.agapow.net/cgi-bin)::
+
+        ScriptAlias /cgi-bin/ /var/www/sites/cgi.agapow.net/public/cgi-bin/
+        <Directory "/var/www/sites/cgi.agapow.net/public/cgi-bin/">
+                AllowOverride None
+                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+                # dot is optional in specification
+                AddHandler cgi-script .cgi
+                AddHandler default-handler .html .htm .gif .jpg .js .css
+                Order allow,deny
+                Allow from all
+        </Directory>
+
+Note that the databse connection details are contained in a Python file, so
+these should not be served.
+
+All configuration details are found in the file ``config.py``. (Update: some
+appearance and routing details are in ``view/config.py`` but imported into
+the above config file.) Edit these as required:
+
+- DB_CHOICE: set this to something other than 'test_sqlite' to use the
+  production db details
+- DB_TYPE, DB_HOST, etc.: set these to the appropriate production db details.
+  They should be correct already.
+- EXEPATHS: set these to the appropriate paths for the necessary executables.
+  It is probably safer to have it set to absolute paths.
+
+The apparent paths are:
+
+/home/tgray/apps/quick-join-1.0.10
+/home/tgray/apps/fasta-35.4.11
+/home/tgray/apps/mafft
+
+
+If the appearance of the page needs to be altered, the relevant layouots can be
+found in ``views/templates``, in particular the ``PAGES`` variable.
+
+
+Possible errors
+---------------
+
+*error message about missing Bio.something*: install Biopython
+
+*error message about missing wsgiref*: Python version must be 2.6+
+
+
+Development
+-----------
+
+When developing or testing matchseq, the following points are of interest:
+
+* Pertinent details in config.py need to be altered, specifically the
+  development mode and the database connection details
+
+* If run in development mode, a mock server is set up. This will not serve
+  static assets (css, images etc.) You will need to alter the address and port
+  for serving.
+
+* The mock server can be run ``python matchseq,cgi``. If it returns the source
+  for the page immediately, you've left it in production mode.
+
+* Note that while the mock server is running, changes to the source may not be
+  reflected in the served content.
+
+
+

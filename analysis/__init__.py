@@ -19,6 +19,8 @@ from Bio.Seq import Seq
 import fastacline
 import mafft
 import qjoincline
+import fasttreecline
+import config
 
 
 ## CONSTANTS & DEFINES ###
@@ -68,31 +70,81 @@ def db_seq_to_seqrec (rec, sel_regions):
 	
 	
 	
-def match_seqs (method, selected_genes, sel_regions, target_seq, exepaths={}):
+def match_seqs (method, selected_genes, sel_regions, target_seq, outgroup, exepaths={}):
+	"""
+	Return similarities between a set of sequences, as a table or tree.
+
+	:Parameters:
+		method
+			a string giving how to match seqs
+		selected_genes
+			database ids for the sequences involved
+		sel_regions
+			required for the db lookup
+		target_seq
+			the raw seq data for a query sequence
+		outgroup
+			the id of the sequence to be set as outgroup in a tree
+		exe_paths
+			hash of paths to the various programs used
+
+	:Returns:
+		Either a Fasta table or an ETE tree
+
+	This should really have been two seperate functions, one for tables and
+	one for trees. Now it's a frozen mistake.
+	"""
 	## Preconditions & preparation:
+
 	## Main:
-	# convert everything to Seqrecs
-	bioseqs = [db_seq_to_seqrec (g, sel_regions) for g in selected_genes]
+	# gather ref seqs as seqrecs, record outgroup
+	bioseqs = []
+	out_seqrec = None
+	for g in selected_genes:
+		sr = db_seq_to_seqrec (g, sel_regions)
+		bioseqs.append (sr)
+		if outgroup and (g['id'] == int(outgroup)):
+			out_seqrec = sr
+	# if target seq, add it too
 	if target_seq:
-		bioseqs. append (SeqRecord (id='QUERY', name='QUERY', seq=Seq (target_seq)))
+		bioseqs.append (SeqRecord (id='QUERY', name='QUERY', seq=Seq (target_seq)))
 	
-	# align and build tree
 	results = []
 	
 	if (method == 'nj'):
+		# align and build tree
 		# clean up names for later display
 		for b in bioseqs:
 			b.id = clean_seqname (b.id)
 			b.name = clean_seqname (b.name)
 			
-		# now run
+		# align seqs
 		mafft_app = mafft.MafftCline (exepath=exepaths['mafft'])
 		mafft_app.run_fftns (bioseqs)
 		bp_alignment = mafft_app.extract_results()
+
+		# build tree
+		# TODO: number of bootstraps should be config val
 		cli = qjoincline.QjoinCline (exepath=exepaths['qjoin'])
-		cli.run (bp_alignment)
+		cli.run (bp_alignment, num_bootstraps=config.NUM_BOOTSTRAPS)
 		phyl = cli.extract_results()
-		results.append (('newicktree', phyl))
+
+		#cli = fasttreecline.FasttreeCline (exepath=exepaths['fasttree'])
+		#cli.run (bp_alignment)
+		#phyl = cli.extract_results()
+
+		# now reroot tree if required
+		if outgroup:
+			assert out_seqrec, "should have outgroup seqrec not None"
+			outgroup_name = out_seqrec.name
+			possible_outgroup_names = [outgroup_name, "'%s'" % outgroup_name]
+			for n in phyl.traverse():
+				if n.name in possible_outgroup_names:
+					og_node = n
+					break
+			phyl.set_outgroup (n)
+
+		results.append (('tree', phyl))
 		
 	elif (method == 'fasta'):
 		fcline = fastacline.FastaCline (exepath=exepaths['fasta'])

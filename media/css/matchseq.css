@@ -4,6 +4,7 @@ Stylesheet for the FishPathogen.eu sequence matching tool.
 
 body {
 	font: Times;
+	padding: 2.0em;
 }
 
 label { 
@@ -19,6 +20,60 @@ p.helptext {
 	font-style: italic;
 }
 
-hr.form_divider {
-	border: 5px solid green;
+div.form_field {
+	padding: 0.5em 1.0em;
+	border: 1px solid lightgray;
+	margin: 0.5em 0.0em;
 }
+
+p.error {
+	border: 1px solid maroon;
+	background-color: indianred; 
+	padding: 0.5em 1.0em;
+}
+
+p.note {
+	border: 1px solid darkgreen;
+	background-color: limegreen; 
+	padding: 0.5em 1.0em;
+}
+
+hr.form_divider {
+	border: 1px solid #888888;
+}
+
+div.revi_treestring {
+	border: 1px solid gray;
+        background-color: lightgray;
+	padding: 0.5em 1.0em;
+	font-family: 'Courier new', Courier, monospace;
+}
+
+div#svgCanvas {
+margin-left:auto;
+margin-right:auto;
+}
+
+
+table {
+width:90%;
+border-top:1px solid #e5eff8;
+border-right:1px solid #e5eff8;
+margin:1em auto;
+border-collapse:collapse;
+}
+td {
+color:#678197;
+border-bottom:1px solid #e5eff8;
+border-left:1px solid #e5eff8;
+padding:.3em 1em;
+text-align:center;
+}
+
+thead th {
+background:#f4f9fe;
+text-align:center;
+font:bold 1.2em/2em "Century Gothic","Trebuchet MS",Arial,Helvetica,sans-serif;
+color:#66a3d3;
+}
+

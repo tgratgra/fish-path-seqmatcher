@@ -29,8 +29,11 @@ class PhyloTextViz (baseqryviz.BaseQryViz):
 	resources = []
 	
 	def render (self):
-		treestr = self.data
-		return tag_with_contents ('div', treestr, class_="revi_treestring")
+		# NOTE: data is an ete2 tree so we do things differently
+		return tag_with_contents ('div',
+			self.data.write(),
+			class_="revi_treestring"
+		)
 	
 
 

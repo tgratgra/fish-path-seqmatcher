@@ -57,8 +57,13 @@ class FastaMatch (object):
 
 
 class FastaReader (object):
-	def __init__ (self, src):
-		self.src = src
+	def __init__ (self, hndl, mode='rb'):
+		if (isinstance (hndl, basestring)):
+			hndl = open (hndl, mode)
+			hndl_opened = True
+		else:
+			hndl_opened = False
+		self.hndl = hndl
 		
 	def read (self):
 		"""

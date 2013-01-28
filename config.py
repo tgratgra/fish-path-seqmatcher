@@ -10,11 +10,23 @@ adjusted.
 
 ### CONSTANTS & DEFINES
 
-DEV_MODE = True
+DEV_MODE = False
+CAPTURE_TRACEBACKS = True
+
+# where is this running?
+LOCALE = 'AN'
+#LOCALE = 'DTU'
+
+# IP for dev, DTU is live so doesn't need this
+if LOCALE == 'AN':
+	TEST_ADDR = "72.14.179.53"
+
+TEST_PORT = 9123
+
 
 # Db connection details
 
-if DEV_MODE:
+if LOCALE in [ 'AN', 'HPA']:
 	DB_TYPE = 'sqlite'
 	DB_HOST = "fish.sqlite"
 	DB_USER = None
@@ -29,9 +41,7 @@ else:
 
 
 # submission buttons for forms
-SUBMIT_SELECT_REGIONS = 'Select regions'
-SUBMIT_SELECT_GENES = 'Select genes'
-SUBMIT_MATCH_GENES = 'Match genes'
+from views.config import *
 
 
 # maximum sequences to return from region selection
@@ -40,12 +50,38 @@ SEQLIMIT = 150
 # user must select at least this many reference sequences
 MIN_REFSEQS = 3
 
+# for phyogeny reconstruction
+NUM_BOOTSTRAPS = 100
+
 # executable paths
-EXEPATHS = {
-	'mafft': 'mafft',
-	'fasta': 'fasta36',
-	'qjoin': 'qjoin',
-}
+if LOCALE == 'HPA':
+	EXEPATHS = {
+		'mafft': '/usr/bin/mafft',
+		'fasta': '/home/f0/paul/Installed/bin/fasta36',
+		'qjoin': '/home/f0/paul/Bin/qjoin',
+		'fasttree': '/usr/local/bin/FastTree',
+	}
+elif LOCALE == 'AN':
+        EXEPATHS = {
+                'mafft': '/usr/local/bin/mafft',
+                'fasta': '/usr/local/bin/fasta36',
+                'qjoin': '/usr/local/bin/qjoin',
+		'fasttree': '/usr/local/bin/FastTree',
+        }
+elif LOCALE == 'DTU':
+	EXEPATHS = {
+                'mafft': '/home/tgray/apps/mafft/bin/mafft',
+                'fasta': '/home/tgray/apps/fasta-35.4.11/bin/fasta35',
+                'qjoin': '/home/tgray/apps/quick-join-1.0.10/qjoin',
+		'fasttree': '/usr/local/bin/FastTree',
+        }
+
+
+
+	
+
+REQUEST_METHOD = 'GET'
+#REQUEST_METHOD = 'POST'
 
 
 ### END ######################################################################
