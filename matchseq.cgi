@@ -35,7 +35,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import config
 from utils import dbconn
-import views.config as view_config
 from analysis import match_seqs
 from views import templates
 from views import formbuilder

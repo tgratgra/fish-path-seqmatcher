@@ -15,7 +15,7 @@ CGI
 
 Note that CGI arguments can be presented in a number of ways. Thus the slightly intricate parsing.
 
-It's very difficult to relaibly catch logs/errors from a CGI program running in situ. It's best to dev using the Python WSGI mock and go from there.
+It's very difficult to relaibly catch logs/errors from a CGI program running in situ. It's best to dev using the Python WSGI mock and go from there. However, the mock WSGI cannot serve other files (e.g. css, js) which makes things difficult. Perhaps dev with the media loaded statically from external site?
 
 
 Phylogenetic reconstruction
@@ -41,6 +41,10 @@ Tree display
 
 JsPhyloSVG works reasonably well but:
 
+- there are distinct gaps in the documentation, that required dissecting the code
+
+- the kit does no error detection. If your input data is bad, it just thrashes.
+
 - if you create the display with a newick formatted tree, not all features are supported.
 
 - while PhyloXml supports more features, error detection for malformed trees is non-existent. The tree just fails to render and sometimes spins.
@@ -52,4 +56,10 @@ JsPhyloSVG works reasonably well but:
 - in the input data 'fileSource' must be set to false, or not defined, otherwise the the inpout will almost certainly be misparsed
 
 - including PhyloXML in a webpage is a pain due to javascripts multiline issues. Might be easier to pass JSON.
+
+- on first blush, the kit doesn't display a scale bar. It actually does, but it's a little obscure on how to do it.  Before drawing "Smits.PhyloCanvas.Render.Parameters.Rectangular.showScaleBar" must be a true value for the scale bar to appeasr. However, the value passed is taken as the desired length of the scale bar. So you must precalculate and pass a sane value. Otherwise the scaklebar shows up as a straight line across the bottom of the image.
+
+- a good way of calculating a round and sensibel length for the scale bar is 10**int(floor(log10(X))) where x is the size of the longest branch.
+
+- Despite hints that the kit suppports drawing support values, it doesn't really. However, it does use a different drawing procedure for the the names of internal nodes. So you must set the internal node names to the confidence values and can set the styling of the internal names like thus before drawing: Smits.PhyloCanvas.Render.Style.bootstrap = { "font-style":  'italic', ...};
 

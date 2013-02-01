@@ -41,7 +41,7 @@ else:
 
 
 # submission buttons for forms
-from views.config import *
+#from views.config import *
 
 
 # maximum sequences to return from region selection
@@ -52,6 +52,20 @@ MIN_REFSEQS = 3
 
 # for phyogeny reconstruction
 NUM_BOOTSTRAPS = 100
+
+
+# how to write branchlengths on the trees
+SUPPORT_FMT = "%1.2f"
+
+SUBMIT_SELECT_PATHOGEN = '0: Select pathogen'
+SUBMIT_SELECT_REGIONS = '1: Select regions'
+SUBMIT_SELECT_GENES = '2: Select sequences'
+SUBMIT_MATCH_GENES = '3: Match sequences'
+
+TREE_SHAPE = 'square'
+TREE_HT = 1000
+TREE_WT = 1000
+
 
 # executable paths
 if LOCALE == 'HPA':

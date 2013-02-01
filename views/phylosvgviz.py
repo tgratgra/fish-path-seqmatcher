@@ -12,6 +12,7 @@ __docformat__ = 'restructuredtext en'
 
 import re
 from copy import deepcopy
+from math import log10, floor
 
 from htmltags import *
 import baseqryviz
@@ -20,7 +21,7 @@ from utils import treeutils, jsutils
 import config
 
 __all__ = [
-	'PhyloSvgViz',
+	'PhyloSvgViz', 
 ]
 
 
@@ -71,8 +72,20 @@ class PhyloSvgViz (baseqryviz.BaseQryViz):
 			if (n.dist <= 0.0):
 				n.dist = default_bl
 
-		## Postcondtions & return:
+		# get support values on tree by setting supprt as name
+		for n in ete_tree.traverse ("postorder"):
+			# if an internal node
+			if (not n.is_leaf()):
+				n.name = config.SUPPORT_FMT % n.support	
+
+		# very hacky - calc appropriate scale bar size and stick on root
+		magn = int (floor (log10 (max_bl)))
+		scale_size = 10**magn
+		ete_tree.scale_size = scale_size
+
+		## Postcondtions & return:int ( floor ( log10 (x)))
 		return ete_tree
+
 
 	def render (self):
 		ete_tree = self.copyAndCleanTree()
@@ -87,9 +100,16 @@ class PhyloSvgViz (baseqryviz.BaseQryViz):
 		""" % (tree_xml, js_xml)
 
 		# return appropriate 
-		return debug_str + """
+		return """
 <div id="svgCanvas"> </div>
 <script type="text/javascript">
+	Smits.PhyloCanvas.Render.Style.bootstrap = {
+        "font-family":  'Verdana',
+        "font-style":  'italic',
+        "font-size":    12,
+        "text-anchor":  'start'
+    };
+	Smits.PhyloCanvas.Render.Parameters.Rectangular.showScaleBar = %(SCALE)s;
 	var dataObject = { phyloxml: '%(TREE_STR)s' };
 	phylocanvas = new Smits.PhyloCanvas(
 		dataObject,
@@ -99,6 +119,7 @@ class PhyloSvgViz (baseqryviz.BaseQryViz):
 	);
 </script>
 	""" % {
+		'SCALE'     : ete_tree.scale_size,
 		'TREE_STR'  : js_xml,
 		'SHAPE'     : config.TREE_SHAPE,
 		'HT'        : config.TREE_HT,
