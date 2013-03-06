@@ -10,8 +10,33 @@ __docformat__ = 'restructuredtext en'
 
 ### IMPORTS ###
 
-import ete2
+# A hairy problem: ete2 has a number of depedencies that it doesn't
+# necessarily depend upon: MySQLdb, Numpy, PyQt, etc. If you don't use
+# the associated functionality, you won't need these dependencies. But
+# ete2 tries to import them anyway and write warning messages to stdout
+# and stderr for each one, before importing ete2 successfully. Stray output
+# could create problems in a cgi envionment, so these have to be
+# suppressed. Hence the convuluted import below.
 
+import os, sys
+
+class SuppressAllOutput (object):
+	def __enter__(self):
+		sys.stderr.flush()
+		self.old_stderr = sys.stderr
+		sys.stderr = open('/dev/null', 'a+', 0)
+		sys.stdout.flush()
+		self.old_stdout = sys.stdout
+		sys.stdout = open('/dev/null', 'a+', 0)
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		sys.stderr.flush()
+		sys.stderr = self.old_stderr
+		sys.stdout.flush()
+		sys.stdout = self.old_stdout
+
+with SuppressAllOutput():
+	import ete2
 
 __all__ = [
 	'tree_to_phyloxml'
