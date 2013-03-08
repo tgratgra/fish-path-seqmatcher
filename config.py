@@ -10,7 +10,7 @@ adjusted.
 
 ### CONSTANTS & DEFINES
 
-DEV_MODE = False
+DEV_MODE = True
 CAPTURE_TRACEBACKS = True
 
 # where is this running?
@@ -19,7 +19,8 @@ LOCALE = 'AN'
 
 # IP for dev, DTU is live so doesn't need this
 if LOCALE == 'AN':
-	TEST_ADDR = "72.14.179.53"
+	#TEST_ADDR = "72.14.179.53"
+	TEST_ADDR = "127.0.0.1"
 
 TEST_PORT = 9123
 

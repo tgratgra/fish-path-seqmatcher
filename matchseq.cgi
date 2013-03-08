@@ -116,7 +116,7 @@ def show_results_page (args):
 		', '.join(region_names)))
 	target_seq = args.get ('seq', '')
 	method = args['match_by']
-	outgroup = args['outgroup']
+	outgroup = args.get ('outgroup', None)
 	
 	results = ''
 	try:
