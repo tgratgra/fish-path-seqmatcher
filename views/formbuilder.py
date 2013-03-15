@@ -257,9 +257,9 @@ def select_pathogen_form (d, methods, pathogen_choices):
 		helptext="Which organism are you looking for matches with?", default=None)
 
 	controls = """
-		<input type="reset" value="Reset" />
-		<input type="button" value="Back" onClick="javascript:history.go(-1)"/>		
-		<input type="submit" name="submit" value="%s" />	
+		
+			
+		<input class="btn btn-primary" type="submit" name="submit" value="%s" />	
 	""" % config.SUBMIT_SELECT_REGIONS
 	
 	## Return:
@@ -295,11 +295,9 @@ def select_region_form (d, methods, region_choices):
 	])
 
 	controls = """
-		<input type="reset" value="Reset" />
-		<input type="button" value="Back" onClick="javascript:history.go(-1)"/> 		
-		<input type="submit" name="submit" value="%s" />	
-		<input type="submit" name="submit" value="%s" />	
-	""" % (config.SUBMIT_SELECT_PATHOGEN, config.SUBMIT_SELECT_GENES)
+		<input class="btn btn-primary" type="submit" name="submit" value="%s" />	
+			
+	""" % ( config.SUBMIT_SELECT_GENES)
 	
 	## Return:
 	return templates.FORM_BODY % {
@@ -329,12 +327,10 @@ def select_genes_form (d, gene_choices):
 		fields += select_outgroup_input (gene_choices)
 	
 	controls = """
-		<input type="reset" value="Reset">
-		<input type="button" value="Back" onClick="javascript:history.go(-1)"/> 		
-		<input type="submit" name="submit" value="%s">
-		<input type="submit" name="submit" value="%s">
-		<input type="submit" name="submit" value="%s">
-	""" % (config.SUBMIT_SELECT_PATHOGEN, config.SUBMIT_SELECT_REGIONS , config.SUBMIT_MATCH_GENES)
+		
+		<input class="btn btn-primary" type="submit" name="submit" value="%s">
+		<input class="btn btn-primary" type="submit" name="submit" value="%s">
+	""" % (config.SUBMIT_SELECT_REGIONS , config.SUBMIT_MATCH_GENES)
 	
 	## Return:
 	return templates.FORM_BODY %  {
@@ -365,8 +361,9 @@ def show_results_form (d, results):
 	# so we can handle multiple results
 	for r in results:
 		if r[0] in ['tree']:
-			results_viz += PhyloTextViz (r[1]).render()
 			results_viz += PhyloSvgViz (r[1]).render()
+			results_viz += PhyloTextViz (r[1]).render()
+			
 		elif r[0] in ['fastamatchs']:
 			results_viz += FastaMatchViz (r[1]).render()
 		else:
@@ -382,10 +379,10 @@ def show_results_form (d, results):
 	])
 	
 	controls = """
-		<input type="submit" name="submit" value="%s">
-		<input type="submit" name="submit" value="%s">
-		<input type="submit" name="submit" value="%s">
-	""" % (config.SUBMIT_SELECT_PATHOGEN, config.SUBMIT_SELECT_REGIONS, config.SUBMIT_SELECT_GENES)
+		
+		<input type="submit" class="btn btn-primary" name="submit" value="%s">
+		<input type="submit" class="btn btn-primary" name="submit" value="%s">
+	""" % (config.SUBMIT_SELECT_REGIONS, config.SUBMIT_SELECT_GENES)
 	
 	## Return:
 	return templates.FORM_BODY %  {

@@ -30,7 +30,7 @@ class PhyloTextViz (baseqryviz.BaseQryViz):
 	
 	def render (self):
 		# NOTE: data is an ete2 tree so we do things differently
-		return tag_with_contents ('div',
+		return tag_with_contents ('textarea',
 			self.data.write(),
 			class_="revi_treestring"
 		)

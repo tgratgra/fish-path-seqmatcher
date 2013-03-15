@@ -17,13 +17,13 @@ PAGE = """
 
 <html>
 	<head>
-		<title>FishPathogens.Eu Sequence Matcher</title>
+		<title></title>
 
 		<link rel="shortcut icon" href="http://localhost/" />
 
-		<link rel="stylesheet" type="text/css" href="./media/css/matchseq.css" />
-		<script type="text/javascript" src="./media/js/raphael-min.js" ></script> 
-		<script type="text/javascript" src="./media/js/jsphylosvg-min.js"></script>
+		<link rel="stylesheet" type="text/css" href="http://www.fishpathogens.eu/media/css/matchseq.css" />
+		<script type="text/javascript" src="http://www.fishpathogens.eu/media/js/raphael-min.js" ></script> 
+		<script type="text/javascript" src="http://www.fishpathogens.eu/media/js/jsphylosvg-min.js"></script>
 		<script language='javascript'>
 			function SetAllCheckBoxes(FormName, FieldName, CheckValue) {
 				if(!document.forms[FormName])
@@ -40,29 +40,102 @@ PAGE = """
 						objCheckBoxes[i].checked = CheckValue;
 			}
 		</script>
+		
+		<script  src="/fp-common/jscript/script.js" type="text/javascript"></script>
+<script src="/fp-common/jscript/menu.js" type="text/javascript"></script>
+<script  src="/fp-common/jscript/ajax.js" type="text/javascript"></script>
+<script  src="/fp-common/jscript/form.js" type="text/javascript"></script>
+<script  src="/fp-common/jscript/geo.js" type="text/javascript"></script>
+<LINK href="/fp-common/css/menu.css" rel="stylesheet" type="text/css">
+<LINK href="/fp-common/css/style.css" rel="stylesheet" type="text/css">
+
+ <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="/fp-common/bootstrap/js/bootstrap.min.js"></script>			
+<link href="/fp-common/bootstrap/css/bootstrap-cerulean.min.css" rel="stylesheet" media="screen">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  
+		
 
 	<head>
 	<body>
 
 
 		
+	<div class="navbar  navbar-fixed-top">
+			
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+      <!--    <a class="brand" ></a>-->
+      
+          <div class="nav-collapse collapse">
+   
+            <ul class="nav">
+            
+              <li class="dropdown"><a href="#" class="dropdown-toggle"  data-toggle="dropdown"><i class="icon-home icon-white"></i> Home</a>
+              <ul class="dropdown-menu">
+                <li><a href="/">Main</a></li>
+  				  <li><a href="/fp-vhsv/">VHSV</a></li>
+  				 <li><a href="/fp-ihnv/">IHNV</a></li>
+                <li><a href="/fp-betanodavirus/">Betanodavirus</a></li>
+   </ul>
+   
+            </li>
+              <li><a href="%(SIDEBAR_PATHOGEN_STR)sindex.php#about">About</a></li>
+              <li><a href="%(SIDEBAR_PATHOGEN_STR)sindex.php#contact"><i class="icon-envelope icon-white"></i> Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+			<br/><Br/><br/>
+	<div class="container-fluid">
+		
+      <div class="row-fluid">
+			
+        <div class="span3">
+			<p align='center'>
+			<img  alt="Fishpathogens.eu logo" 
+style="border:0px;"  src="/fp-common/images/logo.jpg" ></a></p>	
+          <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+              <li class="nav-header">Isolates</li>
+              <li><a href="%(SIDEBAR_PATHOGEN_STR)sreports_browse.php?type=1">Isolate reports</a></li>
+			<li><a href="%(SIDEBAR_PATHOGEN_STR)sreports_browse.php?type=2">Sequence reports</a></li>
 
-<table id='ms'  width="100%%" >
-<tr>
-<td >
-<p><a href="http://www.fishpathogens.eu" ><img  alt="Fishpathogens.eu logo" 
-style="border:0px;" src="http://www.fishpathogens.eu/images/logo.jpg" ></a></p>
-</td>
-<td style="text-align:center;vertical-align:middle;">
-<img alt="CRL logo"  style="border:0px" width="588px" src="http://www.fishpathogens.eu/images/eurl.png" ></div>
-</td>
-<td><img alt="Epizone logo" style="border:0px" src="http://www.fishpathogens.eu/images/epizone.gif" >
-</td></tr></table>
+			 <li class="nav-header">Search Reports</li>
+			<li><a href="%(SIDEBAR_PATHOGEN_STR)ssearch.php">Search with a text query <i class='icon-search icon-white'></i></a></li>
+
+<li><a href="%(SIDEBAR_PATHOGEN_STR)ssearch_blast.php">Search with a sequence</a></li>
+<li><a href="/cgi-bin/matchseq/matchseq.cgi?submit=1%%3A+Select+regions&pathogen=%(SIDEBAR_PATHOGEN_ID)s&dbid=%(SIDEBAR_PATHOGEN_STR)s">Sequence matcher</a></li>
+			<li class="nav-header">Add a Report</li>
+<li><a href="%(SIDEBAR_PATHOGEN_STR)sinput_isolate.php">Add an Isolate report</a></li>
+<li><a href="%(SIDEBAR_PATHOGEN_STR)sinput_sequence.php">Add a Sequence report</a></li>
+              
+             
+             
+              <li class="nav-header">Related Information</li>
+              
+<li><a href="%(SIDEBAR_PATHOGEN_STR)sg_links.php">Links to external resources</a></li>
+<li><a href="/%(SIDEBAR_PATHOGEN_STR)sg_ncbi_resources.php">Records for VHSV at the NCBI</a></li>
+            </ul>
+          </div><!--/.well -->
+		
+		<img alt="CRL logo"  style="border:0px" width="294px" src="/fp-common/images/eurl.png" >
+		<br/>
+		<img alt="Epizone logo" style="border:0px" src="/fp-common/images/epizone.gif" >
+		<br/>	
+		
+		</div><!--/span-->
+	<div class="span9">
 
 
-
-		<!-- TODO: alter page title if need be -->
-		<h1>Sequence Matching</h1>
+<h2>Sequence matcher</h2>
 	
 		<p class="description">
 			This webservice accepts an input sequence and attempts to match it
@@ -74,18 +147,21 @@ style="border:0px;" src="http://www.fishpathogens.eu/images/logo.jpg" ></a></p>
 	
 		%(RESULTS)s
 	
-		<hr />
+		
 	
-	   <form method="%(METHOD)s" action="" id="dvifish" name="dvifish">
+	   <form method="%(METHOD)s" class='form' action="" id="dvifish" name="dvifish">
 			%(FORM)s
 		</form>
 	
-		<hr />
 		
-		<!-- TODO: alter footer info if need be -->
-		<div class='footer'>
-			
-		</div>
+		
+		 <hr>
+
+      <footer>
+        <p align='center'> </p>
+      </footer>
+
+    </div>
 		
 	</body>
 </html>
@@ -93,14 +169,13 @@ style="border:0px;" src="http://www.fishpathogens.eu/images/logo.jpg" ></a></p>
 
 # the layout for a form
 FORM_BODY = """
-<H2>%(TITLE)s</H2>
+<H3>%(TITLE)s</H3>
 <p class="description">%(DESC)s</p>
 
 <div class="form_controls">
 %(CONTROLS)s
 </div>
 
-<HR class="form_divider" />
 
 %(FIELDS)s
 

@@ -115,7 +115,7 @@ class PhyloSvgViz (baseqryviz.BaseQryViz):
 		dataObject,
 		'svgCanvas', 
 		%(HT)s, %(WT)s,
-		'%(SHAPE)s'
+		'%(SHAPE)s'	
 	);
 </script>
 	""" % {

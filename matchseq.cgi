@@ -295,10 +295,14 @@ def application(environ, start_response):
 	# build page to return
 	response_body = (templates.PAGE % {
 		'MESSAGES': '\n'.join (['<p class="%s">%s: %s</p>' % (r[0], r[0].title(), r[1]) for r in messages]),
+		
 		'RESULTS': '\n'.join (results),
 		'SCRIPT_NAME': __file__,
+		'SIDEBAR_PATHOGEN_ID': args.get('pathogen'),
+		'SIDEBAR_PATHOGEN_STR': args.get('dbid'),
 		'METHOD': config.REQUEST_METHOD,
 		'FORM': form_body,
+		
 	}).encode ('utf-8')
 	response_headers = [
 		('Content-Type', 'text/html; charset=UTF-8'),
@@ -328,4 +332,3 @@ if __name__ == '__main__':
 
 
 ### END ###
-

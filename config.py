@@ -10,7 +10,7 @@ adjusted.
 
 ### CONSTANTS & DEFINES
 
-DEV_MODE = True
+DEV_MODE = False
 CAPTURE_TRACEBACKS = True
 
 # where is this running?
@@ -19,8 +19,7 @@ LOCALE = 'AN'
 
 # IP for dev, DTU is live so doesn't need this
 if LOCALE == 'AN':
-	#TEST_ADDR = "72.14.179.53"
-	TEST_ADDR = "127.0.0.1"
+	TEST_ADDR = "72.14.179.53"
 
 TEST_PORT = 9123
 
@@ -36,9 +35,9 @@ if LOCALE in [ 'AN', 'HPA']:
 else:
 	DB_TYPE = 'mysql'
 	DB_HOST = "localhost"
-	DB_USER = "fishpathogens"
-	DB_PASSWD = "PgDenv23"
-	DB_NAME = "fishpathogens"
+	DB_USER = ""
+	DB_PASSWD = ""
+	DB_NAME = ""
 
 
 # submission buttons for forms
